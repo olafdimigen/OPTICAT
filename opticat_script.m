@@ -32,7 +32,7 @@ EEG_training = pop_eegfiltnew(EEG,HIPASS,[]);
 EEG_training = pop_epoch(EEG_training,{'S123','S234'},[-0.2 2.8]);
 
 %% Remove epoch mean (Groppe, Makeig, & Kutas, 2009)
-EEG_training = pop_rmbase(EEG,[]);
+EEG_training = pop_rmbase(EEG_training,[]);
 
 %% Overweight spike potentials: append peri-saccadic intervals to training data
 EEG_training = pop_overweightevents(EEG_training,'saccade',[-0.02 0.01],OW_FACTOR,REMOVE_EPOCHMEAN); % -20 to +10 ms
