@@ -6,4 +6,6 @@ This is a short and simple script to create "optimized" ICA training data for th
 Dimigen (2018). Optimized ICA-based removal of ocular EEG artifacts from free viewing experiments. BioRxiv. https://doi.org/10.1101/44695
 
 Feedback and corrections are highly appreciated. olaf.dimigen@hu-berlin.de
+
+
 Update: The data to generate Figure 3 of the article can be found here: https://osf.io/ka6qh/
