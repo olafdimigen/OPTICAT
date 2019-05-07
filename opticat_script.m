@@ -20,7 +20,7 @@
 fprintf('\nCreating optimized ICA training data (OPTICAT)...')
 
 %% Constants
-HIPASS           = 2.5  % Hz (try even higher value for Reading)
+HIPASS           = 2.5  % in Hz. Note: this is the edge of the passband (attenuation of -3 dB). Try even higher value for Reading
 OW_FACTOR        = 1    % value for overweighting of SPs
 REMOVE_EPOCHMEAN = true % mean-center the appended peri-saccadic epochs? (strongly recommended)
 EEG_CHANNELS     = 1:45 % indices of all EEG channels (exclude ET channels here)
