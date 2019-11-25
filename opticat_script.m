@@ -1,45 +1,45 @@
 %% Simple pipeline to remove ocular artifacts from (free viewing) EEG 
-% using optimized ICA training (OPTICAT) including eye tracker-guided 
-% component identification (Plöchl et al., 2012) and eye tracker-based
-% quality control (under-/overcorrection)
+% using optimized ICA training (OPTICAT), automatic eye tracker-guided 
+% component identification, and eye tracker-based quality control
 %
 %% This script implements procedures from:
-% Dimigen, O. (2018). Optimized ICA-based removal of ocular artifacts
-% from free viewing EEG. BioArXiv
+% Dimigen, O. (2019). Optimizing the ICA-based removal of ocular artifacts
+% from free viewing EEG. NeuroImage (open access article)
 %
-% Please cite this preprint if you use or adapt this script. Thanks!
-% olaf.dimigen@hu-berlin.de, Script version: 2018-10-30
-
+% Please cite this publication if you use or adapt this script. Thanks!
+% olaf.dimigen@hu-berlin.de, Script version: 2019-11-26
 
 %% Load your EEG dataset (continuous or epoched)
 % This dataset needs to already include 'saccade' and 'fixation' events in 
 % the EEG.event structure. These can be added with the EYE-EEG toolbox 
 % (http://www2.hu-berlin.de/eyetracking-eeg). 
 
+
 %% After loading your data, run the following script:
 fprintf('\nCreating optimized ICA training data (OPTICAT)...')
 
 %% Constants
 HIPASS           = 2.5  % in Hz. Note: this is the edge of the passband (attenuation of -3 dB). Try even higher value for Reading
-OW_FACTOR        = 1    % value for overweighting of SPs
-REMOVE_EPOCHMEAN = true % mean-center the appended peri-saccadic epochs? (strongly recommended)
-EEG_CHANNELS     = 1:45 % indices of all EEG channels (exclude ET channels here)
+OW_FACTOR        = 1    % value for overweighting of SPs (1 = 100% of original data length)
+REMOVE_EPOCHMEAN = true % mean-center the appended peri-saccadic epochs? (strongly recommended!)
+EEG_CHANNELS     = 1:45 % indices of all EEG channels (exclude any eye-tracking channels here)
 
 %% Create training data & high-pass filter it 
 EEG_training = pop_eegfiltnew(EEG,HIPASS,[]); 
 
-%% Cut training data into epochs, e.g. around stimulus onsets (as in Dimigen, 2018)
+%% Cut training data into epochs, e.g. around stimulus onsets (as in Dimigen, 2019)
 EEG_training = pop_epoch(EEG_training,{'S123','S234'},[-0.2 2.8]);
 
-%% Remove epoch mean (Groppe, Makeig, & Kutas, 2009)
-EEG_training = pop_rmbase(EEG_training,[]);
+% this mean-centering step is optional and has little effect at the recommended 
+% %% Remove epoch mean (Groppe, Makeig, & Kutas, 2009)
+% EEG_training = pop_rmbase(EEG_training,[]);
 
 %% Overweight spike potentials: append peri-saccadic intervals to training data
 EEG_training = pop_overweightevents(EEG_training,'saccade',[-0.02 0.01],OW_FACTOR,REMOVE_EPOCHMEAN); % -20 to +10 ms
 
 %% Run ICA
 fprintf('\nRunning ICA on optimized training data...')
-EEG_training = pop_runica(EEG_training,'extended',1,'interupt','on','chanind',EEG_CHANNELS); % (use BINICA for increased speed)
+EEG_training = pop_runica(EEG_training,'extended',1,'interupt','on','chanind',EEG_CHANNELS); % (or use binary ICA [BINICA] for increased speed)
 
 %% Remember weights & sphering matrix 
 wts = EEG_training.icaweights;
@@ -63,9 +63,9 @@ fprintf('\nIdentifying ocular ICs via saccade/fixation variance-ratio threshold.
 
 %% Eye-tracker-guided selection of ICs
 IC_THRESHOLD     = 1.1;   % variance ratio threshold (determined suitable in Dimigen, 2018)
-OPTIMAL_WINDOW   = [5 0]; % saccade window (in samples!) (suitable is -10 ms to 0, see Dimigen, 2018)
+OPTIMAL_WINDOW   = [5 0]; % saccade window (in samples!) (suitable is -10 ms to 0, see Dimigen, 2019)
 
-PLOTFIG          = true;  % plot figure visualizing influence of threshold?
+PLOTFIG          = true;  % plot figure visualizing influence of threshold setting?
 ICPLOTMODE       = 2;     % plot IC topos (inverse weights)? (2 = only plot ocular ICs)
 FLAGMODE         = 3;     % overwrite existing rejection flags?
 
@@ -94,6 +94,7 @@ for e = 1:length(EEG_sac.epoch)
     ix = find([EEG_sac.epoch(e).eventlatency{:}] == 0);
     sac_angles(e) = cell2mat(EEG_sac.epoch(e).eventsac_angle(ix(1)));
 end
+
 % plot saccade angles
 [t,r] = rose(sac_angles*pi/180,36); % angle in radians, plot 10° bins
 figure('name','saccade angles')
@@ -106,11 +107,11 @@ ix_L = find( sac_angles >  150 | sac_angles < -150);
 ix_U = find( sac_angles > -120 & sac_angles <  -60);
 ix_D = find( sac_angles >   60 & sac_angles <  120);
 
-%% Cut epochs around saccades (here: rightward)
+%% Cut epochs around saccades (here: rightward sacc. only, adapt as you wish)
 try 
     fprintf('\nNumber of \"rightwards\" saccades: %i',length(ix_R))
     EEG_sac_R = pop_select(EEG_sac,'trial',ix_R); % select rightwards sacc.
-    EEG_sac_R = pop_rmbase(EEG_sac_R,[-100 0])    % remove pre-saccade baseline
+    EEG_sac_R = pop_rmbase(EEG_sac_R,[-100 0]);   % remove pre-saccade baseline
 catch err
     EEG_sac_R = [];
 end
@@ -126,8 +127,6 @@ xlabel('Time after saccade [ms]')
 % (e.g. high-pass: 0.5 Hz, no overweighting, low-pass: 40 Hz) and compare 
 % the correction results
 
-%% You can also test for overcorrection by ICA (Dimigen, 2018)
+%% You can also test for overcorrection by ICA (Dimigen, 2019)
 % by looking at distortions introduced by ICA in (virtually) 
 % eye movement-free intervals without (micro)saccades.
-% Code for this will be added later to this script. Or drop me an email
-% at olaf.dimigen@hu-berlin.de
