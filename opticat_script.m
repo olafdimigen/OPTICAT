@@ -1,48 +1,41 @@
-%% Simple pipeline to remove ocular artifacts from (free viewing) EEG 
+%% Pipeline to remove ocular artifacts from (free viewing) EEG 
 % using optimized ICA training (OPTICAT), automatic eye tracker-guided 
 % component identification, and eye tracker-based quality control
 %
-% This script implements procedures from the following article:
+% This script implements the procedures from:
 % Dimigen, O. (2019). Optimizing the ICA-based removal of ocular artifacts
 % from free viewing EEG. NeuroImage, https://doi.org/10.1016/j.neuroimage.2019.116117 
 %
-% Please cite this publication if you use or adapt this script. Thanks!
+% Please cite this publication if you use/adapt this script. Thanks!
 %
 % For this script to work, you need to have the EYE-EEG extension for
 % EEGLAB installed (http://www2.hu-berlin.de/eyetracking-eeg)
-% It is also available at www.github.com/olafdimigen/eye-eeg
+% It is also available at: www.github.com/olafdimigen/eye-eeg
 %
 % olaf.dimigen@hu-berlin.de, Script version: 2019-11-26
 
-
-%% Load your EEG dataset (can be continuous or epoched)
-% Note: This dataset needs to already include 'saccade' and 'fixation' events 
-% in the EEG.event structure that mark the beginning and end of eye movements. 
-% These can be added, for example, with the EYE-EEG toolbox. 
-
-% After loading your data, run the following script:
-
 %% Constants
-HIPASS           = 2    % (in Hz). Note: this defines the filter's passband edge
+HIPASS           = 2    % Filter's passband edge (in Hz)
+                        % Best results for scenes were obtained with values of 2 to 2.5 Hz
                         % Possibly try even higher value for tasks like Reading
-OW_FACTOR        = 1    % value for overweighting of SPs (1 = add data corresponding to 100% of original data length)
+OW_FACTOR        = 1    % value for overweighting of SPs (1 = add spike potentials corresponding to 100% of original data length)
 REMOVE_EPOCHMEAN = true % mean-center the appended peri-saccadic epochs? (strongly recommended)
 EEG_CHANNELS     = 1:45 % indices of all EEG channels (exclude any eye-tracking channels here)
-                        % I recommend to also include EOG channels if they
-                        % were also recorded against the common reference % (not: bipolar)
+                        % I recommend to also include EOG channels (if also recorded against common reference)
 
-%% Create a copy of your data used as training data & high pass-filter it
+%% Load your EEG dataset (can be continuous or epoched)
+% Note: This dataset in EEGLAB format needs to already include 
+% 'saccade' and 'fixation' events in the EEG.event structure.
+EEG = pop_loadset('filename','C:/myEEGdata.set');
+     
+%% Create copy of data used as training data & high pass-filter it
 fprintf('\nCreating optimized ICA training data...')
-EEG_training = pop_eegfiltnew(EEG,HIPASS,[]); 
+EEG_train = EEG;
+EEG_training = pop_eegfiltnew(EEG_train,HIPASS,[]); 
 
 %% Cut training data into epochs, e.g. around stimulus onsets (as in Dimigen, 2019)
+% here I assume stimulus onset triggers are "S123" and "S234"
 EEG_training = pop_epoch(EEG_training,{'S123','S234'},[-0.2 2.8]);
-
-%% Remove epoch mean (Groppe, Makeig, & Kutas, 2009)
-% note: this mean-centering step is optional 
-% At the recommended HP-filter settings, tt should have little to no effect 
-% if you use "typical" epoch lengths (e.g. 3 sec epochs)
-EEG_training = pop_rmbase(EEG_training,[]); 
 
 %% Overweight spike potentials
 % Repeatedly append intervals around saccade onsets (-20 to +10 ms) to training data
@@ -69,7 +62,6 @@ EEG.icasphere   = sph;
 EEG.icaweights  = wts;
 EEG.icachansind = EEG_CHANNELS;
 EEG = eeg_checkset(EEG); % let EEGLAB re-compute EEG.icaact & EEG.icawinv
-
 
 fprintf('\nIdentifying ocular ICs via saccade/fixation variance-ratio threshold...')
 
@@ -136,7 +128,7 @@ ylabel('Saccade-related ERP')
 xlabel('Time after saccade [ms]')
 
 % You can now re-run this script with more traditional settings 
-% (e.g. high-pass: 0.5 Hz, no overweighting, low-pass: 40 Hz) and compare 
+% (e.g. high-pass: 0.5 Hz, low-pass: 40 Hz, no overweighting) and compare 
 % the correction results
 
 %% You can also test for overcorrection by ICA (Dimigen, 2019)
