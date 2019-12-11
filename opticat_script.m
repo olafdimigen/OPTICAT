@@ -2,50 +2,61 @@
 % using optimized ICA training (OPTICAT), automatic eye tracker-guided 
 % component identification, and eye tracker-based quality control
 %
-%% This script implements procedures from:
+% This script implements procedures from the following article:
 % Dimigen, O. (2019). Optimizing the ICA-based removal of ocular artifacts
-% from free viewing EEG. NeuroImage (open access article)
+% from free viewing EEG. NeuroImage, https://doi.org/10.1016/j.neuroimage.2019.116117 
 %
 % Please cite this publication if you use or adapt this script. Thanks!
+%
+% For this script to work, you need to have the EYE-EEG extension for
+% EEGLAB installed (http://www2.hu-berlin.de/eyetracking-eeg)
+% It is also available at www.github.com/olafdimigen/eye-eeg
+%
 % olaf.dimigen@hu-berlin.de, Script version: 2019-11-26
 
-%% Load your EEG dataset (continuous or epoched)
-% This dataset needs to already include 'saccade' and 'fixation' events in 
-% the EEG.event structure. These can be added with the EYE-EEG toolbox 
-% (http://www2.hu-berlin.de/eyetracking-eeg). 
 
+%% Load your EEG dataset (can be continuous or epoched)
+% Note: This dataset needs to already include 'saccade' and 'fixation' events 
+% in the EEG.event structure that mark the beginning and end of eye movements. 
+% These can be added, for example, with the EYE-EEG toolbox. 
 
-%% After loading your data, run the following script:
-fprintf('\nCreating optimized ICA training data (OPTICAT)...')
+% After loading your data, run the following script:
 
 %% Constants
-HIPASS           = 2.5  % in Hz. Note: this is the edge of the passband (attenuation of -3 dB). Try even higher value for Reading
-OW_FACTOR        = 1    % value for overweighting of SPs (1 = 100% of original data length)
-REMOVE_EPOCHMEAN = true % mean-center the appended peri-saccadic epochs? (strongly recommended!)
+HIPASS           = 2    % (in Hz). Note: this defines the filter's passband edge
+                        % Possibly try even higher value for tasks like Reading
+OW_FACTOR        = 1    % value for overweighting of SPs (1 = add data corresponding to 100% of original data length)
+REMOVE_EPOCHMEAN = true % mean-center the appended peri-saccadic epochs? (strongly recommended)
 EEG_CHANNELS     = 1:45 % indices of all EEG channels (exclude any eye-tracking channels here)
+                        % I recommend to also include EOG channels if they
+                        % were also recorded against the common reference % (not: bipolar)
 
-%% Create training data & high-pass filter it 
+%% Create a copy of your data used as training data & high pass-filter it
+fprintf('\nCreating optimized ICA training data...')
 EEG_training = pop_eegfiltnew(EEG,HIPASS,[]); 
 
 %% Cut training data into epochs, e.g. around stimulus onsets (as in Dimigen, 2019)
 EEG_training = pop_epoch(EEG_training,{'S123','S234'},[-0.2 2.8]);
 
-% this mean-centering step is optional and has little effect at the recommended 
-% %% Remove epoch mean (Groppe, Makeig, & Kutas, 2009)
-% EEG_training = pop_rmbase(EEG_training,[]);
+%% Remove epoch mean (Groppe, Makeig, & Kutas, 2009)
+% note: this mean-centering step is optional 
+% At the recommended HP-filter settings, tt should have little to no effect 
+% if you use "typical" epoch lengths (e.g. 3 sec epochs)
+EEG_training = pop_rmbase(EEG_training,[]); 
 
-%% Overweight spike potentials: append peri-saccadic intervals to training data
-EEG_training = pop_overweightevents(EEG_training,'saccade',[-0.02 0.01],OW_FACTOR,REMOVE_EPOCHMEAN); % -20 to +10 ms
+%% Overweight spike potentials
+% Repeatedly append intervals around saccade onsets (-20 to +10 ms) to training data
+EEG_training = pop_overweightevents(EEG_training,'saccade',[-0.02 0.01],OW_FACTOR,REMOVE_EPOCHMEAN); 
 
 %% Run ICA
 fprintf('\nRunning ICA on optimized training data...')
-EEG_training = pop_runica(EEG_training,'extended',1,'interupt','on','chanind',EEG_CHANNELS); % (or use binary ICA [BINICA] for increased speed)
+EEG_training = pop_runica(EEG_training,'extended',1,'interupt','on','chanind',EEG_CHANNELS); % or use binary ICA for more speed
 
-%% Remember weights & sphering matrix 
+%% Remember ICA weights & sphering matrix 
 wts = EEG_training.icaweights;
 sph = EEG_training.icasphere;
 
-%% Remove existing ICA solutions from original dataset
+%% Remove any existing ICA solutions from your original dataset
 EEG.icaact      = [];
 EEG.icasphere   = [];
 EEG.icaweights  = [];
@@ -53,41 +64,42 @@ EEG.icachansind = [];
 EEG.icawinv     = [];
 
 %% Transfer unmixing weights
-fprintf('\nTransfering ICA weights from training data to original dataset...')
+fprintf('\nTransfering ICA weights from training data to original data...')
 EEG.icasphere   = sph;
 EEG.icaweights  = wts;
 EEG.icachansind = EEG_CHANNELS;
 EEG = eeg_checkset(EEG); % let EEGLAB re-compute EEG.icaact & EEG.icawinv
 
+
 fprintf('\nIdentifying ocular ICs via saccade/fixation variance-ratio threshold...')
 
 %% Eye-tracker-guided selection of ICs
-IC_THRESHOLD     = 1.1;   % variance ratio threshold (determined suitable in Dimigen, 2018)
-OPTIMAL_WINDOW   = [5 0]; % saccade window (in samples!) (suitable is -10 ms to 0, see Dimigen, 2019)
-
-PLOTFIG          = true;  % plot figure visualizing influence of threshold setting?
-ICPLOTMODE       = 2;     % plot IC topos (inverse weights)? (2 = only plot ocular ICs)
-FLAGMODE         = 3;     % overwrite existing rejection flags?
-
+IC_THRESHOLD     = 1.1;   % variance ratio threshold (determined as suitable in Dimigen, 2019)
+SACC_WINDOW      = [5 0]; % saccade window (in samples!) to compute variance ratios (see Dimigen, 2019)
+PLOTFIG          = true;  % plot a figure visualizing influence of threshold setting?
+ICPLOTMODE       = 2;     % plot component topographies (inverse weights)? (2 = only plot "bad" ocular ICs)
+FLAGMODE         = 3;     % overwrite existing rejection flags? (3 = yes)
+                          
 %% Automatically flag ocular ICs (Plöchl et al., 2012)
-[EEG, varratiotable] = pop_eyetrackerica(EEG,'saccade','fixation',OPTIMAL_WINDOW,IC_THRESHOLD,FLAGMODE,PLOTFIG,ICPLOTMODE);
+[EEG, varratiotable] = pop_eyetrackerica(EEG,'saccade','fixation',SACC_WINDOW,IC_THRESHOLD,FLAGMODE,PLOTFIG,ICPLOTMODE);
 
-%% Remove flagged ICs
+%% Remove flagged ocular ICs
 badcomps = EEG.reject.gcompreject;
-EEG      = pop_subcomp(EEG,find(badcomps)); % remove
+EEG      = pop_subcomp(EEG,find(badcomps)); % remove them
 
 
-%% ---------------------------- QUALITY CHECK ----------------------------
+
+%%  ----- SIMPLE CORRECTION QUALITY CHECK (TEST FOR UNDERCORRECTION) -----
 
 %% Evaluate results: Compute saccade-locked ERPs for saccades of a single orientation
 EEG_sac = pop_epoch(EEG,{'saccade'},[-0.2 0.6]); % cut epochs around saccades
 
 %% Get saccades of certain orientations (here: plusminus 30 deg)
-% (note that the origin of most ET systems is in *upper* left screen corner)
+% (note that the origin of most eye-tracker systems is *upper* left screen corner)
 % Right-going:      0 degree
 % Left-going:     180 degree
-% Up-going:       -90 degree (for most ET data)
-% Down-going:      90 degree (for most ET data)
+% Up-going:       -90 degree (for most ET systems)
+% Down-going:      90 degree (for most ET systems)
 
 % Extract saccade angles
 for e = 1:length(EEG_sac.epoch)
@@ -95,11 +107,11 @@ for e = 1:length(EEG_sac.epoch)
     sac_angles(e) = cell2mat(EEG_sac.epoch(e).eventsac_angle(ix(1)));
 end
 
-% plot saccade angles
+% Plot saccade angles
 [t,r] = rose(sac_angles*pi/180,36); % angle in radians, plot 10° bins
 figure('name','saccade angles')
 h2 = polar(t,r,'r-');
-set(gca,'ydir','reverse') % origin of coordinate system upper left
+set(gca,'ydir','reverse') % origin of coordinate system = upper left corner
 
 %% Extract left/right/up/down-going saccades (plusminus 30°)
 ix_R = find( sac_angles >  -30 & sac_angles <   30);
@@ -111,13 +123,13 @@ ix_D = find( sac_angles >   60 & sac_angles <  120);
 try 
     fprintf('\nNumber of \"rightwards\" saccades: %i',length(ix_R))
     EEG_sac_R = pop_select(EEG_sac,'trial',ix_R); % select rightwards sacc.
-    EEG_sac_R = pop_rmbase(EEG_sac_R,[-100 0]);   % remove pre-saccade baseline
+    EEG_sac_R = pop_rmbase(EEG_sac_R,[-100 0]);   % subtract pre-sacc. baseline
 catch err
     EEG_sac_R = [];
 end
 
 %% Plot saccade-ERP to check for residual artifacts 
-% (here: rightward saccades)
+% (here: for rightward saccades)
 figure('name','Control plot: Undercorrection')
 plot(EEG_sac_R.times, mean(EEG_sac_R.data(EEG_CHANNELS,:,:),3))
 ylabel('Saccade-related ERP')
@@ -129,4 +141,8 @@ xlabel('Time after saccade [ms]')
 
 %% You can also test for overcorrection by ICA (Dimigen, 2019)
 % by looking at distortions introduced by ICA in (virtually) 
-% eye movement-free intervals without (micro)saccades.
+% eye movement-free epochs without (micro)saccades or large drift movements.
+% (I might add this to the script later)
+
+% If this scripts works very nicely or very badly for you, drop me an email
+% at olaf.dimigen@hu-berlin.de
