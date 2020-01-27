@@ -31,7 +31,7 @@ SUBJECTS = 1:12
 for dataset = 1:2
     
     % load epochated data whose first 80 * 45^2 = 162,000 samples were used for ICA. 
-    % Epochs with voltages > 500 µV were removed. Contains saccade events, detected in contin. dataset
+    % Epochs with "freak" voltages > 500 µV were removed. Contains saccade events, detected in contin. dataset
     switch dataset
         case 1 % scenes
             path_rawset_et   = 'Y:/OPTICA/scenes/benchmarkdata_new/';

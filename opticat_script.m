@@ -3,7 +3,7 @@
 % component identification, and eye tracker-based quality control
 %
 % This script implements the procedures from:
-% Dimigen, O. (2019). Optimizing the ICA-based removal of ocular artifacts
+% Dimigen, O. (2020). Optimizing the ICA-based removal of ocular artifacts
 % from free viewing EEG. NeuroImage, https://doi.org/10.1016/j.neuroimage.2019.116117 
 %
 % Please cite this publication if you use/adapt this script. Thanks!
@@ -12,7 +12,10 @@
 % EEGLAB installed (http://www2.hu-berlin.de/eyetracking-eeg)
 % It is also available at: www.github.com/olafdimigen/eye-eeg
 %
-% olaf.dimigen@hu-berlin.de, Script version: 2019-11-26
+% olaf.dimigen@hu-berlin.de, Script version: 2020-01-28
+%
+% Note: I will update this script in the future and will also upload an
+% example raw data set that can be used with it.
 
 %% Constants
 HIPASS           = 2    % Filter's passband edge (in Hz)
@@ -21,7 +24,7 @@ HIPASS           = 2    % Filter's passband edge (in Hz)
 OW_FACTOR        = 1    % value for overweighting of SPs (1 = add spike potentials corresponding to 100% of original data length)
 REMOVE_EPOCHMEAN = true % mean-center the appended peri-saccadic epochs? (strongly recommended)
 EEG_CHANNELS     = 1:45 % indices of all EEG channels (exclude any eye-tracking channels here)
-                        % I recommend to also include EOG channels (if also recorded against common reference)
+                        % I recommend to also include EOG channels (if they were recorded against the common reference)
 
 %% Load your EEG dataset (can be continuous or epoched)
 % Note: This dataset in EEGLAB format needs to already include 
@@ -33,7 +36,7 @@ fprintf('\nCreating optimized ICA training data...')
 EEG_train = EEG;
 EEG_training = pop_eegfiltnew(EEG_train,HIPASS,[]); 
 
-%% Cut training data into epochs, e.g. around stimulus onsets (as in Dimigen, 2019)
+%% Cut training data into epochs, e.g. around stimulus onsets (as in Dimigen, 2020)
 % here I assume stimulus onset triggers are "S123" and "S234"
 EEG_training = pop_epoch(EEG_training,{'S123','S234'},[-0.2 2.8]);
 
@@ -66,8 +69,8 @@ EEG = eeg_checkset(EEG); % let EEGLAB re-compute EEG.icaact & EEG.icawinv
 fprintf('\nIdentifying ocular ICs via saccade/fixation variance-ratio threshold...')
 
 %% Eye-tracker-guided selection of ICs
-IC_THRESHOLD     = 1.1;   % variance ratio threshold (determined as suitable in Dimigen, 2019)
-SACC_WINDOW      = [5 0]; % saccade window (in samples!) to compute variance ratios (see Dimigen, 2019)
+IC_THRESHOLD     = 1.1;   % variance ratio threshold (determined as suitable in Dimigen, 2020)
+SACC_WINDOW      = [5 0]; % saccade window (in samples!) to compute variance ratios (see Dimigen, 2020)
 PLOTFIG          = true;  % plot a figure visualizing influence of threshold setting?
 ICPLOTMODE       = 2;     % plot component topographies (inverse weights)? (2 = only plot "bad" ocular ICs)
 FLAGMODE         = 3;     % overwrite existing rejection flags? (3 = yes)
@@ -131,7 +134,7 @@ xlabel('Time after saccade [ms]')
 % (e.g. high-pass: 0.5 Hz, low-pass: 40 Hz, no overweighting) and compare 
 % the correction results
 
-%% You can also test for overcorrection by ICA (Dimigen, 2019)
+%% You can also test for overcorrection by ICA (Dimigen, 2020)
 % by looking at distortions introduced by ICA in (virtually) 
 % eye movement-free epochs without (micro)saccades or large drift movements.
 % (I might add this to the script later)

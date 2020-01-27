@@ -45,9 +45,7 @@ for dataset = 1:2
                 
                 % ow_level: overweighting factor
                 for owfactor = OWS
-                    
-                    
-                    warning('LOADING NEXT DATASET...')
+
                     fprintf('\nLoading dataset: %i subj: %i lowcut: %.1f Hz highcut: %.1f Hz owfactor %.1f\n\n', dataset,s,lowcutoffs,hicutoffs,owfactor)
                     
                     %% load training data

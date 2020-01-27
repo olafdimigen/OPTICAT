@@ -15,12 +15,11 @@ THRESHOLDS  = [0.5:0.1:1.6]; % thresholds, 1.6 = outlier-detection
 % used to identify ocular ICs. This could work well with high-density montages.
 % However, I did not pursue this road further, because
 % the distribution of variance ratios is not Gaussian (as assumed by the
-% methods used here). It would be cool to look at this possibility
-% (individual thresholds based on outlier detection) thoroughly in future
-% research. In the scripts, the 1.6 is the relict of an early exploration.
-
+% method used here). It would be cool to look at this possibility
+% (individual thresholds based on outlier detection) more thoroughly in future
+% research. TL;DR: In the scripts, the 1.6 is the relict of an early exploration.
 MS_WITHOUT_SAC_SMP = 100;  % here: in samples (not ms)
-OUTLIER_PVALUE     = 0.10; % p-value for Grubbs method (assumes Gaussian distrib. of variance ratios)
+OUTLIER_PVALUE     = 0.10; % p-value for Grubbs outlier detection method (not pursued further, assumes Gaussian distrib.)
 
 SUBJECTS  = 1:12
 
@@ -45,7 +44,7 @@ for dataset = 1:2
         fprintf('\n\n\n');
         warning('Subject %i!',s)
         
-        %% load benchmark data: EEG_stim, EEG_stim_nosac, EEG_sac_L, EEG_sac_R, EEG_sac_U, EEG_sac_D)
+        %% load benchmark data: EEG_stim, EEG_stim_nosac, EEG_sac_L, EEG_sac_R, EEG_sac_U, EEG_sac_D
         filename = sprintf('%s/benchmarkdata_subj_%i.mat',path,s);
         load(filename,'EEG_stim','EEG_stim_nosac','EEG_sac_R');
         NCHANS_EEG = 45;
@@ -107,7 +106,7 @@ for dataset = 1:2
                     EEG_stim_nosac = eeg_checkset(EEG_stim_nosac);
                     clear sph wts
                     
-                    %% get var-ratio-table once (do not change data)
+                    %% get variance-ratio-table once (do not change data)
                     plotfig        = false;
                     icplotmode     = 4;
                     dummythreshold = 1.0; % used just to get variance ratio table
@@ -118,10 +117,10 @@ for dataset = 1:2
                     
                     % get variance ratio table
                     % (use saccade window from -10 ms before sacc until sacc offset)
-                    [~, varratiotable50] = pop_eyetrackerica(EEG_stim,'saccade','fixation',[ 5  0], dummythreshold,3,plotfig,icplotmode);
+                    [~, varratiotable50] = pop_eyetrackerica(EEG_stim,'saccade','fixation',[5 0], dummythreshold,3,plotfig,icplotmode);
                     
                     % save variance ratio table
-                    opticaresults(dataset).subj(s).hc(hc_level).lc(lc_level).ow(ow_level).varratio50   = varratiotable50(:,3);
+                    opticaresults(dataset).subj(s).hc(hc_level).lc(lc_level).ow(ow_level).varratio50 = varratiotable50(:,3);
                     
                     % continue working with window: -10 to 0 ms
                     varratiotable = varratiotable50;
@@ -162,10 +161,13 @@ for dataset = 1:2
                             badcomps = varratio > thresh;
                             badcomps = badcomps';
                             
-                        elseif thresh == 1.6
+                        elseif thresh == 1.6 % not reported/used
                             
-                            % special code: ocular ICs as outliers
+                            % special code: detect ocular ICs as outliers
+                            % in terms of variance ratio
                             % not pursued further and not reported in paper
+                            % and probably only makes sense with many, many
+                            % EEG channels/ICs
                             
                             %% detect bad ICs as "outliers" = adaptive method
                             [~,ix_badcomps,badvalues] = deleteoutliers(varratio,OUTLIER_PVALUE);
@@ -370,7 +372,7 @@ for dataset = 1:2
                                     savepath = sprintf('Z:/OPTICA/reading/correcteddata_new/correcteddata_subj_%i_hc_%i_lc_%i_ow_%i_thresh_%i.mat',s,hc_level,lc_level,ow_level,thresholdlevel);
                             end
                             % save
-                            % save(savepath,'EEG_sac_RX','EEG_sac_R2','EEG_stimX','EEG_stim2','EEG_stim_nosacX','EEG_stim_nosac2'); %EEG_stim, EEG_stim_nosac, EEG_sacR
+                            save(savepath,'EEG_sac_RX','EEG_sac_R2','EEG_stimX','EEG_stim2','EEG_stim_nosacX','EEG_stim_nosac2'); %EEG_stim, EEG_stim_nosac, EEG_sacR
                             
                         end
                         

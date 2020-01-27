@@ -1,7 +1,7 @@
 % Alternative version of the "OPTICAT" script that uses a "steeper" 
 % high-pass filter with a custom, more narrow transition bandwidth
 %
-% Explanation: Procedures in the Dimigen et al. (2019) paper use 
+% Explanation: Procedures in the Dimigen et al. (2020) paper use 
 % EEGLAB's pop_eegfiltnew() function with its default transition bandwidth 
 % settings of .
 % Per default, this function filters the EEG using a relatively wide
@@ -12,19 +12,19 @@
 % low-frequency neural activity (e.g. < 1-2 Hz) will not be properly modelled 
 % in the ICA decomposition. In the paper, I did not find that this had a
 % problematic effect on the stimulus-ERPs, that is, I did not see any 
-% increase in overcorrection of the stimulus-ERP if the training
-% data was high pass-filtered aggressively (e.g. at 2-2.5 Hz) with the 
+% increase in overcorrection of the stimulus-ERP if the *training
+% data* was high pass-filtered aggressively (e.g. at 2-2.5 Hz) with the 
 % EEGLAB defaults.
 
 % However, Supplementary Figure S7 suggests that the problematic frequency
 % content in the training data is below 1 Hz, at least for Scene viewing.
 % Thus, a potentially safer alternative is to filter the EEG at a lower cutoff
-% (e.g. at 0.75 Hz, see Supplementary Figure S7) and with a "steeper" filter
+% (e.g. at 0.75 Hz, see Supplementary Figure S7) but with a "steeper" filter.
 % 
 % This should remove less of the low-frequency neural activity
 % from the training data while producing comparable correction results 
-% (cf. Supplementary Figure S7)as the optimal filter settings described with 
-% the EEGLAB filter defaults described in the paper. Preserving low-frequency 
+% (cf. Supplementary Figure S7) as the optimal filter settings described with 
+% the EEGLAB filter defaults detailed in the paper. Preserving low-frequency 
 % activity in the training data would be beneficial if the user wants to work 
 % with the decomposed source waveforms in source space (rather than backproject 
 % the corrected data).
@@ -86,7 +86,7 @@ xlabel('Hz')
 EEG_training = EEG;
 EEG_training = firfilt(EEG_training,b,[]); % filter the training data using firfilt()
 
-%% Cut training data into epochs, e.g. around stimulus onsets (as in Dimigen, 2019)
+%% Cut training data into epochs, e.g. around stimulus onsets (as in Dimigen, 2020)
 EEG_training = pop_epoch(EEG_training,{'S 11','S 12','S 13'},[-0.2 1.8]);
 
 %% Overweight spike potentials
@@ -119,8 +119,8 @@ EEG = eeg_checkset(EEG); % let EEGLAB re-compute EEG.icaact & EEG.icawinv
 fprintf('\nIdentifying ocular ICs via saccade/fixation variance-ratio threshold...')
 
 %% Eye-tracker-guided selection of ICs
-IC_THRESHOLD     = 1.1;   % variance ratio threshold (determined as suitable in Dimigen, 2019)
-SACC_WINDOW      = [5 0]; % saccade window (in samples!) to compute variance ratios (see Dimigen, 2019)
+IC_THRESHOLD     = 1.1;   % variance ratio threshold (determined as suitable in Dimigen, 2020)
+SACC_WINDOW      = [5 0]; % saccade window (in samples!) to compute variance ratios (see Dimigen, 2020)
 PLOTFIG          = true;  % plot a figure visualizing influence of threshold setting?
 ICPLOTMODE       = 2;     % plot component topographies (inverse weights)? (2 = only plot "bad" ocular ICs)
 FLAGMODE         = 3;     % overwrite existing rejection flags? (3 = yes)

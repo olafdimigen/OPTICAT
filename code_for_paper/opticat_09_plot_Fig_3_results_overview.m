@@ -249,7 +249,7 @@ ylimits = ylim; % plot([9.5 9.5],[ylimits(1) ylimits(2)],'k:')
 set(gca,'fontsize',FSA)
 % xtickangle(ANGLE_XLABELS)
 % make plot prettier
-[x_pna1, y_pna1] = putnewaxes([1 22],[-5 25],[-8],[0])
+[x_pna1, y_pna1] = putnewaxes([1 22],[-5 25],[-8],[0]) % putnewaxes allows to prettier axis design (axes with a break)
 % xtickangle(x_pna1,ANGLE_XLABELS)
 set(x_pna1,'Xtick',[1:20 22]);
 set(x_pna1,'Xticklabels',FILTERLABELS);
