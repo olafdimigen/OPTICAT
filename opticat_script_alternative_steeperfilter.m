@@ -3,8 +3,7 @@
 %
 % Explanation: Procedures in the Dimigen et al. (2020) paper use 
 % EEGLAB's pop_eegfiltnew() function with its default transition bandwidth 
-% settings of .
-% Per default, this function filters the EEG using a relatively wide
+% settings. Per default, this function filters the EEG using a relatively wide
 % and frequency-dependent transition bandwidth 
 % (see https://github.com/downloads/widmann/firfilt/firfilt.pdf).
 %
@@ -125,7 +124,7 @@ PLOTFIG          = true;  % plot a figure visualizing influence of threshold set
 ICPLOTMODE       = 2;     % plot component topographies (inverse weights)? (2 = only plot "bad" ocular ICs)
 FLAGMODE         = 3;     % overwrite existing rejection flags? (3 = yes)
 
-%% Automatically flag ocular ICs (Plöchl et al., 2012)
+%% Automatically flag ocular ICs (PlÃ¶chl et al., 2012)
 [EEG, varratiotable] = pop_eyetrackerica(EEG,'saccade','fixation',SACC_WINDOW,IC_THRESHOLD,FLAGMODE,PLOTFIG,ICPLOTMODE);
 
 %% Remove flagged ocular ICs
@@ -153,12 +152,12 @@ for e = 1:length(EEG_sac.epoch)
 end
 
 % Plot saccade angles
-[t,r] = rose(sac_angles*pi/180,36); % angle in radians, plot 10° bins
+[t,r] = rose(sac_angles*pi/180,36); % angle in radians, plot 10Â° bins
 figure('name','saccade angles')
 h2 = polar(t,r,'r-');
 set(gca,'ydir','reverse') % origin of coordinate system = upper left corner
 
-%% Extract left/right/up/down-going saccades (plusminus 30°)
+%% Extract left/right/up/down-going saccades (plusminus 30Â°)
 ix_R = find( sac_angles >  -30 & sac_angles <   30);
 ix_L = find( sac_angles >  150 | sac_angles < -150);
 ix_U = find( sac_angles > -120 & sac_angles <  -60);
