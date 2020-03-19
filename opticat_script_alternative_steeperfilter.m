@@ -168,7 +168,7 @@ ix_D = find( sac_angles >   60 & sac_angles <  120);
 try
     fprintf('\nNumber of \"rightwards\" saccades: %i',length(ix_R))
     EEG_sac_R = pop_select(EEG_sac,'trial',ix_R); % select rightwards sacc.
-    EEG_sac_R = pop_rmbase(EEG_sac_R,[-100 0]);   % subtract pre-sacc. baseline
+    EEG_sac_R = pop_rmbase(EEG_sac_R,[-100 0],[]);   % subtract pre-sacc. baseline
 catch err
     EEG_sac_R = [];
 end
