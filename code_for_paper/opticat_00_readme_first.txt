@@ -8,7 +8,7 @@ https://doi.org/10.1016/j.neuroimage.2019.116117 (open access)
 All code is in MATLAB except for the (ANOVA) statistics which were run in "R" using the "ez" package.
 
 The scripts are a simplified/cleaned-up version of the pipeline used for the main analyses. 
-To keep the pipeline readable, scripts for many of the supplementary analyses (more overweighting proportion, other saccade directions, 
+To keep the pipeline readable, scripts for many of the supplementary analyses (more overweighting proportions, other saccade directions, 
 visualization of filter characteristics, control analysis with steeper filter etc.) as well as scripts for some of the 
 more fancy visualizations are not included here. Drop me an email if you require those or subfunctions not included here.
 The scripts make use of EEGLAB (including the binary ICA implementation) and the EYE-EEG toolbox (v0.85). 
