@@ -1,4 +1,4 @@
-Create optimized ICA training (OPTICAT) data for ocular correction of EEG recorded during free viewing
+Create optimized ICA training (OPTICAT) data for ocular correction of EEG recorded during free viewing (or data that is otherwise contaminated by ocular artifacts)
 
 This repository contains two things:
 
